@@ -1,6 +1,7 @@
 /* rous-mola-bot: If someone says `Rous' or `Rosa' (like that or in capital
  *         letters) send a message praising Rosa
- * Copyright (C) 2015  Jaime Mosquera, Rosa Veiga
+ * message.c: Parse the Telegram API messages
+ * Copyright (C) 2015  Jaime Mosquera  _Rosa Veiga_
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
  * También puedes usar if, que ahorran el tiempo de hacer una llamada a una
  * función (aunque tampoco es una gran ganancia).
  */
-char search_mention(char* full_message, unsigned long int size)
+char search_mention(char* full_message)
 {
     return 1;
 }
@@ -50,7 +51,8 @@ char search_mention(char* full_message, unsigned long int size)
  *
  * En cualquier caso, devuelve una cadena con el valor, sea cadena o entero.
  */
-void json_field(char* full_message, const char* field, char type, char** value)
+void json_field(char* full_message, const char* field, char type,
+                char* value)
 {
     return;
 }
