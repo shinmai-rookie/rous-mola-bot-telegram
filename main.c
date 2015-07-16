@@ -23,16 +23,14 @@
 #include "message.h"
 #include "bot_key.h"
 
-typedef unsigned long int size_type;
-
-typedef enum {
-    size_type size;
+typedef struct {
+    size_t size;
     char* text;
 } json_message;
 
-size_type read_message(void* raw_message, size_type size, size_type nmemb, void* dest)
+size_t read_message(void* raw_message, size_t size, size_t nmemb, void* dest)
 {
-    size_type real_size = size * nmemb;
+    size_t real_size = size * nmemb;
     json_message* dest_message = (json_message*) dest;
 
     dest_message->text = realloc(dest_message->text, dest_message->size + real_size);
@@ -44,7 +42,7 @@ size_type read_message(void* raw_message, size_type size, size_type nmemb, void*
 
     memcpy(&(dest_message->text[dest_message->size]), raw_message, real_size);
     dest_message->size += real_size;
-    dest_message->message[dest_message->size] = '\0';
+    dest_message->text[dest_message->size] = '\0';
 
     return real_size;
 }
@@ -61,22 +59,22 @@ int main(int argc, char** argv)
 
     strcat(out_params, chat_id);
     strcat(out_params, "&text=Rous mola");
-    printf("%s\n", params);
+    printf("%s\n", out_params);
 
     curl_global_init(CURL_GLOBAL_ALL);
 
-    curl_setopt(easy_handle, CURLOPT_URL, "https://api.telegram.org/bot" BOT_KEY "/getUpdates?limit=1&offset=0");
-    curl_setopt(easy_handle, CURLOPT_WRITEFUNCTION, read_message);
-    curl_setopt(easy_handle, CURLOPT_WRITEDATA, in_message);
+    curl_easy_setopt(easy_handle, CURLOPT_URL, "https://api.telegram.org/bot" BOTKEY "/getUpdates?limit=1&offset=0");
+    curl_easy_setopt(easy_handle, CURLOPT_WRITEFUNCTION, read_message);
+    curl_easy_setopt(easy_handle, CURLOPT_WRITEDATA, in_message);
     curl_easy_perform(easy_handle);
 
-    json_field(in_message, "text", STRING, &message_text);
-    json_field(in_message, "update_id", INT, &message_id);
-    json_field(in_message, "chat", INT, &chat_id);
+    json_field(in_message.text, "text", STRING, &message_text);
+    json_field(in_message.text, "update_id", INT, &message_id);
+    json_field(in_message.text, "chat", INT, &chat_id);
 
     /*
-    curl_setopt(easy_handle, CURLOPT_URL, "https://api.telegram.org/bot" BOT_KEY "/sendMessage");
-    curl_setopt(easy_handle, CURLOPT_READFUNCTION, read_data);
+    curl_easy_setopt(easy_handle, CURLOPT_URL, "https://api.telegram.org/bot" BOT_KEY "/sendMessage");
+    curl_easy_setopt(easy_handle, CURLOPT_READFUNCTION, read_data);
     */
     result = curl_easy_perform(easy_handle);
 
