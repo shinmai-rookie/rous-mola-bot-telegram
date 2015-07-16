@@ -67,6 +67,7 @@ int main(int argc, char** argv)
 
     printf("Parsing JSON values: \n");
 
+    /* free(fake_string); */
     printf("    message in `\"message\":\"Rous mola\"'\n");
     printf("        `%s' [`Rous mola']\n", (json_field("\"message\":\"Rous mola\"", "message", STRING, &fake_string), fake_string));
     /* free(fake_string); */
