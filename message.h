@@ -26,4 +26,4 @@ char search_mention(char* full_message);
 /* Save the value in the field  field,  which may be an integer or a string, as
  * read from the JSON-formatted message  full_message */
 void json_field(char* full_message, const char* field, char type,
-                char* value);
+                char** value);

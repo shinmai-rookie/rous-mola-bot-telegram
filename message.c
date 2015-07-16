@@ -52,7 +52,7 @@ char search_mention(char* full_message)
  * En cualquier caso, devuelve una cadena con el valor, sea cadena o entero.
  */
 void json_field(char* full_message, const char* field, char type,
-                char* value)
+                char** value)
 {
     return;
 }

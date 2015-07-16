@@ -1,8 +1,9 @@
 CC=gcc
 MAIN=rousbot
-CFLAGS=-ansi -Wall -Wextra -pedantic -Wno-unused-parameter
-CFLAGSDEBUG=-g $(CFLAGS)
-CFLAGSFINAL=-O3 $(CFLAGS)
+CFLAGS=-ansi -Wall -Wextra -pedantic -Wno-unused-parameter `curl-config --cflags`
+CFLAGSCOMP=`curl-config --libs`
+CFLAGSDEBUG=-g $(CFLAGS) $(CFLAGSCOMP)
+CFLAGSFINAL=-O3 $(CFLAGS) $(CFLAGSCOMP)
 SRCS=main.c
 DEPS=message.c
 OBJS=$(DEPS:.c=.o)
