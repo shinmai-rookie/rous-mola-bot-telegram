@@ -23,7 +23,8 @@
 
 int main(int argc, char** argv)
 {
-    char fake_string[1];
+    char* fake_string;
+    fake_string = (char*) malloc(1 * sizeof(char));
     fake_string[0] = '\0';
 
     printf("Searching `Rosa'/`Rous'/`ROSA'/`ROUS'\n");
@@ -67,22 +68,29 @@ int main(int argc, char** argv)
     printf("Parsing JSON values: \n");
 
     printf("    message in `\"message\":\"Rous mola\"'\n");
-    printf("        `%s' [`Rous mola']\n", (json_field("\"message\":\"Rous mola\"", "message", STRING, fake_string), fake_string));
+    printf("        `%s' [`Rous mola']\n", (json_field("\"message\":\"Rous mola\"", "message", STRING, &fake_string), fake_string));
+    /* free(fake_string); */
     printf("    time in `\"time\":1346124'\n");
-    printf("        `%s' [`1346124']\n\n", (json_field("\"time\":1346124", "time", INT, fake_string), fake_string));
+    printf("        `%s' [`1346124']\n\n", (json_field("\"time\":1346124", "time", INT, &fake_string), fake_string));
+    /* free(fake_string); */
 
     printf("    message in `\"message\":1' (expecting a string)\n");
-    printf("        `%s' [`']\n", (json_field("\"message\":1", "message", STRING, fake_string), fake_string));
+    printf("        `%s' [`']\n", (json_field("\"message\":1", "message", STRING, &fake_string), fake_string));
+    /* free(fake_string); */
     printf("    date in \"date\":\"date\" (expecting an int)\n");
-    printf("        `%s' [`']\n\n", (json_field("\"date\":\"date\"", "message", INT, fake_string), fake_string));
+    printf("        `%s' [`']\n\n", (json_field("\"date\":\"date\"", "message", INT, &fake_string), fake_string));
+    /* free(fake_string); */
 
     printf("    message in `\"message\":bad' (badly formatted string)\n");
-    printf("        `%s' [`']\n", (json_field("\"message\":bad", "message", STRING, fake_string), fake_string));
+    printf("        `%s' [`']\n", (json_field("\"message\":bad", "message", STRING, &fake_string), fake_string));
+    /* free(fake_string); */
     printf("    date in \"date\":\"102\" (badly formatted int)\n");
-    printf("        `%s' [`']\n\n", (json_field("\"date\":\"102\"", "message", INT, fake_string), fake_string));
+    printf("        `%s' [`']\n\n", (json_field("\"date\":\"102\"", "message", INT, &fake_string), fake_string));
+    /* free(fake_string); */
 
     printf("    message in `\"message\":\"This is a \\\"message\\\"\"' (escaped `\"')\n");
-    printf("        `%s' [`This is \"message\"']\n", (json_field("\"message\":bad", "message", STRING, fake_string), fake_string));
+    printf("        `%s' [`This is \"message\"']\n", (json_field("\"message\":bad", "message", STRING, &fake_string), fake_string));
+    /* free(fake_string); */
 
     return 0;
 }
