@@ -4,7 +4,7 @@ CFLAGS=-ansi -Wall -Wextra -pedantic -Wno-unused-parameter `curl-config --cflags
 CFLAGSCOMP=`curl-config --libs`
 CFLAGSDEBUG=-g $(CFLAGS) $(CFLAGSCOMP)
 CFLAGSFINAL=-O3 $(CFLAGS) $(CFLAGSCOMP)
-SRCS=main.c
+SRCS=rousbot.c
 DEPS=message.c
 OBJS=$(DEPS:.c=.o)
 TEST=test
