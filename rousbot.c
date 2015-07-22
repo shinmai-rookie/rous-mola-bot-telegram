@@ -25,7 +25,8 @@
 
 /* The space allocated for the whole address of the read and write commands,
  * including the query commands
- * Both were around ~110 bytes when I tested them; possible buffer overflow */
+ * Both were around ~110 bytes when I tested them; if you suspect a possible
+ * buffer overflow, change them */
 #define GET_METHOD_READ_SIZE 128
 #define GET_METHOD_WRITE_SIZE 128
 
@@ -45,7 +46,8 @@ size_t read_message(void* raw_message, size_t size, size_t nmemb, void* dest)
     json_message* dest_message = (json_message*) dest;
 
     /* We allocate space for the new part of the update */
-    dest_message->text = realloc(dest_message->text, dest_message->size + real_size + 1);
+    dest_message->text = realloc(dest_message->text,
+                                 dest_message->size + real_size + 1);
     if (dest_message->text == NULL)
     {
         fprintf(stderr, "Error: Rosa no mola, o no hay memoria suficiente\n");
@@ -63,7 +65,7 @@ size_t read_message(void* raw_message, size_t size, size_t nmemb, void* dest)
 
 /* This acts as a non-working  read_message,  used to send the message through
  * the HTTP GET method in a query string */
-size_t dummy_function(void* raw_message, size_t size, size_t nmemb, void* dest)
+size_t dummy_function(void* no_use, size_t size1, size_t nmemb, void* null)
 {
     return size * nmemb;
 }
@@ -80,18 +82,20 @@ int main(int argc, char** argv)
     char* GET_write;         /* The query string used to send the message */
     char* GET_read;          /* The query string used to read the update*/
 
-#if 1
+#if 1              /* In case there's not a working  message.c */
     /* Offset of the last update (with "0" we get the oldest that is still
      * stored) */
     char message_id[] = "0";
-#else
-    /* ID of the chat we have to send the message to */
+#else              /* Needs a working  message.c */
+    /* ID of the chat the message is sent to */
     char* chat_id;
-    /* Offset of the last update (with "0" we get the oldest that is still
-     * stored) */
+    /* Offset of the last update (by default, "0" to get the oldest that is
+     * still stored) */
     char* message_id;
 #endif
     char* message_text;
+
+    int i;         /* Used to go through  message_id  and add one to it */
 
 
     curl_global_init(CURL_GLOBAL_ALL);
@@ -104,8 +108,14 @@ int main(int argc, char** argv)
         in_message.text = (char*) malloc(1 * sizeof(char));
         in_message.text[0] = '\0';
 
-        sprintf(GET_read, "https://api.telegram.org/bot%s/getUpdates?limit=1&offset=%s", BOT_KEY, message_id);
+        if (message_id == NULL)
+        {
+            message_id = (char*) malloc(sizeof(char) * 2);
+            sprintf(message_id, "0");
+        }
 
+        sprintf(GET_read, "%s/getUpdates?limit=1&offset=%s",
+                          BOT_ADDRESS, message_id);
         curl_easy_setopt(read_handle, CURLOPT_URL, GET_read);
         curl_easy_setopt(read_handle, CURLOPT_WRITEFUNCTION, read_message);
         curl_easy_setopt(read_handle, CURLOPT_WRITEDATA, &in_message);
@@ -117,32 +127,34 @@ int main(int argc, char** argv)
 
 #if 0              /* Needs a working  message.c */
         free(message_id);
-        /* We read some fields from the update string */
+        /* Read some fields from the update string */
         json_field(in_message.text, "text", STRING, &message_text);
         json_field(in_message.text, "update_id", INT, &message_id);
         json_field(in_message.text, "chat", INT, &chat_id);
 
-        if (message_id == NULL)
-        {
-            message_id = (char*) malloc(sizeof(char) * 2);
-            sprintf(message_id, "0");
-        }
+        if (message_id != NULL)
+            /* Add one to the update ID */
+            for (i = strlen(message_id) - 1;
+                 i >= 0 && ++message_id[i] == '9' + 1; i++)
+                message_id[i] = '0';
 #endif
 
-        /* If "Rosa" or "Rous" is found, we send the answer */
+        /* If "Rosa" or "Rous" is found, send the answer */
         if (search_mention(message_text))
         {
             GET_write[0] = '\0';
-            sprintf(GET_write, "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=Rous mola", BOT_KEY, chat_id);
+            sprintf(GET_write, "%s/sendMessage?chat_id=%s&text=Rous mola",
+                               BOT_ADDRESS, chat_id);
 
             curl_easy_setopt(write_handle, CURLOPT_URL, GET_write);
-            curl_easy_setopt(write_handle, CURLOPT_WRITEFUNCTION, dummy_function);
+            curl_easy_setopt(write_handle, CURLOPT_WRITEFUNCTION,
+                             dummy_function);
             curl_easy_setopt(write_handle, CURLOPT_READDATA, NULL);
 
             result = curl_easy_perform(write_handle);
 
             if (result != CURLE_OK)
-                fprintf(stderr, "Error: Rosa no mola, u ocurrió algún error con cURL\n");
+                fprintf(stderr, "Error: Ocurrió un error con cURL\n");
         }
 
         in_message.size = 0;
