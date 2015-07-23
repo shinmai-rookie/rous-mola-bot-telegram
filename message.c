@@ -34,8 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-char search_mention(char* full_message) {
-
+char search_mention(char* full_message)
+{
     int i = 0;
     char aux;
     size_t searchable_length = strlen(full_message) - 4;
@@ -43,14 +43,16 @@ char search_mention(char* full_message) {
     if (full_message == NULL)
         return 0;
 
-    while (i < searchable_length && *(full_message + i) != '\0') {
-        aux = *(full_message + i + 4);
-        *(full_message + i + 4) = '\0';
-        if (strcmp(full_message + i, "Rosa") * strcmp(full_message + i, "Rous") * strcmp(full_message + i, "ROSA") * strcmp(full_message + i, "ROUS") == 0) {
-            *(full_message + i + 4) = aux;
+    while (i < searchable_length && full_message[i] != '\0')
+    {
+        aux = full_message[i + 4];
+        full_message[i + 4] = '\0';
+        if (strcmp(full_message + i, "Rosa") * strcmp(full_message + i, "Rous") * strcmp(full_message + i, "ROSA") * strcmp(full_message + i, "ROUS") == 0)
+        {
+            full_message[i + 4] = aux;
             return 1;
         }
-        *(full_message + i + 4) = aux;
+        full_message[i + 4] = aux;
         i++;
     }
 
@@ -73,70 +75,87 @@ char search_mention(char* full_message) {
  *
  * En cualquier caso, devuelve una cadena con el valor, sea cadena o entero.
  */
-void json_field(char* full_message, const char* field, char type, char** value) {
-
+void json_field(char* full_message, const char* field, char type, char** value)
+{
     int i = 0, j = 0, k = 0;
     size_t len = strlen(field);
 
-    while (*(full_message + i) != '\0') {
-        if (*(full_message + i) == '\\')
+    /* Go through the message searching  field */
+    while (full_message[i] != '\0')
+    {
+        if (full_message[i] == '\\')
             i++;
-        else {
-            if (*(full_message + i) == '"') {
-                if (*(full_message + i + len) == '"') {
-                    for (j = 0; j < len; j++)
-                        if (*(full_message + i + j) != *(field + j))
-                            goto CONTINUE;                      
-                    if (*(full_message + i + len + 1) == ':') {
-                        if (type == INT) {
-                            j = 0;
-                            if (*(full_message + i + len + 2) == '-')
-                                j++;
-                            while (1) {
-                                if ((*(full_message + i + len + 2 + j) >= '0')&&(*(full_message + i + len + 2 + j) <= '9'))
-                                    j++;
-                                else
-                                    break;
-                            }
-                            *value = (char*) malloc(j);
-                            for (k = 0; k < j; k++)
-                                *(*value + k) = *(full_message + i + len + 3 + j);
-                        }
-                        if (type == STRING) {
-                            j = 0;
-                            if (*(full_message + i + len + 2) != '"') {
-                                *value = NULL;
-                            }
-                            while (1) {
-                                if (*(full_message + i + len + 3 + j) == '\\') {
-                                    j += 2;
-                                    k++;
-                                    continue;
-                                }
-                                if ((*(full_message + i + len + 3 + j) != '"')){
-                                    j++;
-                                    k++;
-                                }
-                                else
-                                    break;
-                            }
-                            *value = (char*) malloc(sizeof(char) * k);
-                            for (j = 0; j < k; j++) {
-                                if (*(full_message + i + len + 3 + j) == '\\')
-                                    continue;
-                                *(*value + j) = *(full_message + i + len + 3 + k);
-                            }
-                        }
 
-                    }
+        else if (full_message[i] == '"' && full_message[i - 1] != ':')
+        {
+            if (full_message[i + len] == '"')
+                for (j = 0; j < len; j++)
+                    if (full_message[i + j] != field[j])
+                        break;         /* from for(j = 0; j < len; j++) */
 
-CONTINUE:
-                    continue;
-                }
-            }
-        }
+            if (full_message[i + len + 1] == ':')
+                break;       /* from while(full_message[i] != 0) */
+        }          /* if (full_message[i-1:i] != ":\"") */
         i++;
     }
+
+    
+    if (full_message[i] == '\0')   /* If the field was not found */
+        *value = NULL;
+
+    else                               /* If it was found*/
+       if (type == INT)
+       {
+           j = 0;
+           if (full_message[i + len + 2] == '-')
+               j++;
+
+           while (1)
+               if ((full_message[i + len + 2 + j] >= '0') && (full_message[i + len + 2 + j] <= '9'))
+                   j++;
+               else
+                   break;
+
+           *value = (char*) malloc(sizeof(char) * j);
+
+           for (k = 0; k < j; k++)
+               *value[k] = full_message[i + len + 2 + k];
+       }           /* if (type == INT) */
+
+       else if (type == STRING)
+       {
+           j = 0;
+           if (full_message[i + len + 2] != '"')
+           {
+               *value = NULL;
+               return;
+           }
+
+           while (1)
+               if (full_message[i + len + 3 + j] == '\\')
+               {
+                   j += 2;
+                   k++;
+               }
+               else if (full_message[i + len + 3 + j] != '"')
+               {
+                   j++;
+                   k++;
+               }
+               else
+                   break;
+
+           *value = (char*) malloc(sizeof(char) * k);
+
+           for (j = 0; j < k; j++)
+           {
+               if (full_message[i + len + 3 + j] == '\\')
+                   continue;
+
+               *value[j] = full_message[i + len + 3 + k];
+           }
+       }           /* if (type == STRING) */
+    /* End of else */
 
     return;
 }
