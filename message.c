@@ -30,9 +30,27 @@
  * También puedes usar if, que ahorran el tiempo de hacer una llamada a una
  * función (aunque tampoco es una gran ganancia).
  */
-char search_mention(char* full_message)
-{
-    return 1;
+
+#include <string.h>
+#include <stdlib.h>
+
+char search_mention(char* full_message) {
+
+    int i = 0;
+    char aux;
+
+    while (*(full_message + i) != '\0') {
+        aux = *(full_message + i + 4);
+        *(full_message + i + 4) = '\0';
+        if (!strcmp(full_message + i, "Rosa") || !strcmp(full_message + i, "Rous") || !strcmp(full_message + i, "ROSA") || !strcmp(full_message + i, "ROUS")) {
+            *(full_message + i + 4) = aux;
+            return 1;
+        }
+        *(full_message + i + 4) = aux;
+        i++;
+    }
+
+    return 0;
 }
 
 #define INT 0
@@ -51,8 +69,70 @@ char search_mention(char* full_message)
  *
  * En cualquier caso, devuelve una cadena con el valor, sea cadena o entero.
  */
-void json_field(char* full_message, const char* field, char type,
-                char** value)
-{
+void json_field(char* full_message, const char* field, char type, char** value) {
+
+    int i = 0, j = 0, k = 0;
+    size_t len = strlen(field);
+
+    while (*(full_message + i) != '\0') {
+        if (*(full_message + i) == '\\')
+            i++;
+        else {
+            if (*(full_message + i) == '"') {
+                if (*(full_message + i + len + 1) == '"') {
+                    for (j = 0; j < len; j++)
+                        if (*(full_message + i + 1 + j) != *(field + j)) 
+                            goto CONTINUE;                       
+                    if (*(full_message + i + len + 2) == ':') {
+                        if (type == INT) {
+                            j = 0;
+                            if (*(full_message + i + len + 3) == '-')
+                                j++;
+                            while (1) {
+                                if ((*(full_message + i + len + 3 + j) >= '0')&&(*(full_message + i + len + 3 + j) <= '9'))
+                                    j++;
+                                else
+                                    break;
+                            }
+                            *value = (char*) malloc(j);
+                            for (k = 0; k < j; k++)
+                                *(*value + k) = *(full_message + i + len + 3 + j);
+                        }
+                        if (type == STRING) {
+                            j = 0;
+                            if (*(full_message + i + len + 3) != '"') {
+                                *value = NULL;
+                            }
+                            while (1) {
+                                if (*(full_message + i + len + 4 + j) == '\\') {
+                                    j += 2;
+                                    k++; 
+                                    continue; 
+                                }
+                                if ((*(full_message + i + len + 4 + j) != '"')){
+                                    j++;
+                                    k++; 
+                                }
+                                else
+                                    break;
+                            }
+                            *value = (char*) malloc(k);
+                            for (j = 0; j < k; j++) {
+                                if (*(full_message + i + len + 4 + j) == '\\')
+                                    continue; 
+                                *(*value + j) = *(full_message + i + len + 3 + k);
+                            }
+                        }
+
+                    }
+
+CONTINUE:
+                    continue;
+                }
+            }
+        }
+        i++;
+    }
+
     return;
 }
