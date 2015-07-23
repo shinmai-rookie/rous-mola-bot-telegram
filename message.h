@@ -18,12 +18,19 @@
  * */
 
 /* Search `Rous' or `Rosa' in  full_message */
+/* If  full_message  is NULL, return 0 */
 char search_mention(char* full_message);
 
 #define INT 0
 #define STRING 1
+#define OBJECT 2
 
-/* Save the value in the field  field,  which may be an integer or a string, as
- * read from the JSON-formatted message  full_message */
+/* Save the value in the field  field  (allocated by this function); the value
+ * may be an integer, a string or an object, as read from the JSON-formatted
+ * message  full_message */
+/* Warning: undefined behavior if  field  and/or  value  are NULL (not if
+ * *value is NULL, though) */
+/* Note: if type is not in the above list, the program does search the field,
+ * but doesn't read any value for it */
 void json_field(char* full_message, const char* field, char type,
                 char** value);

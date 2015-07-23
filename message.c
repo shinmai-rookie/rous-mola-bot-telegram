@@ -17,43 +17,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-/* Esta función busca «Rosa», «Rous», «ROSA» o «ROUS» en full_message; si se
- * encuentra, devuelve 1; si no, devuelve 0.
- *
- * La forma más fácil de hacerlo sería ir con un for desde 0 hasta size-4 (no
- * incluido), poner una «centinela» cuatro caracteres por delante (guardar el
- * valor que está cuatro caracteres por delante en otra variable y meter un
- * '\0' ahí), y usar strcmp (nota: strcmp devuelve 0 cuando son iguales, y !=0
- * cuando son diferentes). Después devuelves el valor que moviste a su
- * posición original.
- *
- * También puedes usar if, que ahorran el tiempo de hacer una llamada a una
- * función (aunque tampoco es una gran ganancia).
- */
-
 #include <string.h>
 #include <stdlib.h>
 
+/* Search `Rous' or `Rosa' in  full_message */
+/* If  full_message  is NULL, return 0 */
+
 char search_mention(char* full_message)
 {
-    int i = 0;
+    size_t i = 0, searchable_length;
     char aux;
-    size_t searchable_length = strlen(full_message) - 4;
 
     if (full_message == NULL)
         return 0;
 
-    while (i < searchable_length && full_message[i] != '\0')
+    searchable_length = strlen(full_message) - 3;
+
+    for(i = 0; i < searchable_length && full_message[i] != '\0'; i++)
     {
         aux = full_message[i + 4];
         full_message[i + 4] = '\0';
-        if (strcmp(full_message + i, "Rosa") * strcmp(full_message + i, "Rous") * strcmp(full_message + i, "ROSA") * strcmp(full_message + i, "ROUS") == 0)
+        if (!(strcmp(&full_message[i], "Rosa") && strcmp(&full_message[i], "Rous")) ||
+            !(strcmp(&full_message[i], "ROSA") && strcmp(&full_message[i], "ROUS")))
         {
             full_message[i + 4] = aux;
             return 1;
         }
         full_message[i + 4] = aux;
-        i++;
     }
 
     return 0;
@@ -61,100 +51,115 @@ char search_mention(char* full_message)
 
 #define INT 0
 #define STRING 1
+#define OBJECT 2
 
-/* ¡Ahora vas a aprender a leer mensajes en JSON, el formato favorito de Pablo
- * Rivas! (no sé si lo de Telegram es JSON de verdad o una copia, pero algo
- * vas a aprender xD)
- *
- * Lo que esta función hace es buscar el valor de  field  entre dos comillas
- * (siempre entre dos comillas), y leer lo que viene después de eso y dos
- * puntos. (Si  field  es "message", buscas "message":"Lo que sea" y devuelves
- * "Lo que sea".) Si  type  es STRING, lo que aparece a la derecha de los dos
- * puntos está entre comillas (ignora las comillas); si es INTEGER, no hay
- * comillas alrededor del número.
- *
- * En cualquier caso, devuelve una cadena con el valor, sea cadena o entero.
- */
+/* Save the value in the field  field  (allocated by this function); the value
+ * may be an integer, a string or an object, as read from the JSON-formatted
+ * message  full_message */
+/* Warning: undefined behavior if  field  and/or  value  are NULL (not if
+ * *value is NULL, though) */
+/* Note: if type is not in the above list, the program does search the field,
+ * but doesn't read any value for it */
 void json_field(char* full_message, const char* field, char type, char** value)
 {
-    int i = 0, j = 0, k = 0;
-    size_t len = strlen(field);
+    size_t i = 0, j = 0, nest_lv = 0, len = strlen(field);
 
-    /* Go through the message searching  field */
-    while (full_message[i] != '\0')
+    if (full_message == NULL || strlen(full_message) <= len)
     {
-        if (full_message[i] == '\\')
-            i++;
-
-        else if (full_message[i] == '"' && full_message[i - 1] != ':')
-        {
-            if (full_message[i + len] == '"')
-                for (j = 0; j < len; j++)
-                    if (full_message[i + j] != field[j])
-                        break;         /* from for(j = 0; j < len; j++) */
-
-            if (full_message[i + len + 1] == ':')
-                break;       /* from while(full_message[i] != 0) */
-        }          /* if (full_message[i-1:i] != ":\"") */
-        i++;
+        *value = NULL;
+        return;
     }
 
+    /* Go through the message searching  field */
+    for (i = 0; full_message[len + i] != '\0'; i++)
+        if (full_message[i] == '\\' && full_message[i + 1] != '\0')
+            i++;
+
+        else if (full_message[i] == '"' && full_message[i + 1] != ':')
+        {
+            i++;   /* `"' isn't useful anymore; we can advance safely */
+
+            if (full_message[len + i] == '"')
+            {
+                full_message[len + i] = '\0';
+                if (strcmp(&full_message[i], field) != 0)
+                    full_message[len + i] = '"';
+                else
+                {
+                    full_message[len + i] = '"';
+                    if (full_message[len + i + 1] == ':')
+                        break;
+                }
+            }
+        }          /* if full_message[i-1:i] not in (':"', '":') */
+
     
-    if (full_message[i] == '\0')   /* If the field was not found */
+    if (full_message[len + i] == '\0') /* If the field was not found */
         *value = NULL;
 
-    else                               /* If it was found*/
+    else                               /* If it was found */
        if (type == INT)
        {
            j = 0;
-           if (full_message[i + len + 2] == '-')
+           if (full_message[len + i + 2] == '-')
                j++;
 
            while (1)
-               if ((full_message[i + len + 2 + j] >= '0') && (full_message[i + len + 2 + j] <= '9'))
+               if ((full_message[len + i + 2 + j] >= '0') && (full_message[len + i + 2 + j] <= '9'))
                    j++;
                else
                    break;
 
-           *value = (char*) malloc(sizeof(char) * j);
-
-           for (k = 0; k < j; k++)
-               *value[k] = full_message[i + len + 2 + k];
-       }           /* if (type == INT) */
-
-       else if (type == STRING)
-       {
-           j = 0;
-           if (full_message[i + len + 2] != '"')
+           /* If no proper integer was found (or if it consisted of only a
+            * dash), return as if nothing had been found */
+           if (j == 0 || (full_message[len + i + 2] == '-' && j == 1))
            {
                *value = NULL;
                return;
            }
 
-           while (1)
-               if (full_message[i + len + 3 + j] == '\\')
-               {
-                   j += 2;
-                   k++;
-               }
-               else if (full_message[i + len + 3 + j] != '"')
-               {
-                   j++;
-                   k++;
-               }
-               else
-                   break;
+           *value = (char*) malloc(sizeof(char) * (j + 1));
+           strncpy(*value, &full_message[len + i + 2], j);
+           (*value)[j] = '\0';
+       }           /* if (type == INT) */
 
-           *value = (char*) malloc(sizeof(char) * k);
-
-           for (j = 0; j < k; j++)
+       else if (type == STRING)
+       {
+           if (full_message[len + i + 2] != '"')
            {
-               if (full_message[i + len + 3 + j] == '\\')
-                   continue;
-
-               *value[j] = full_message[i + len + 3 + k];
+               *value = NULL;
+               return;
            }
+
+           for (j = 0; full_message[len + i + j + 3] != '"'; j++)
+               if (full_message[len + i + j + 3] == '\\')
+                   j++;
+
+           *value = (char*) malloc(sizeof(char) * (j + 1));
+           strncpy(*value, &full_message[len + i + 3], j);
+           (*value)[j] = '\0';
        }           /* if (type == STRING) */
+
+       else if (type == OBJECT)
+       {
+           do
+           {
+               if (full_message[len + i + 2 + j] == '{')
+                   nest_lv++;
+               else if (full_message[len + i + 2 + j] == '}')
+                   nest_lv--;
+               j++;
+           } while (nest_lv > 0);
+
+           if (j == 0)
+               *value = NULL;
+           else
+           {
+               *value = malloc(sizeof(char) * (j + 1));
+               strncpy(*value, &full_message[len + i + 2], j);
+               (*value)[j] = '\0';
+           }
+       }           /* if (type == OBJECT) */
     /* End of else */
 
     return;

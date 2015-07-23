@@ -82,6 +82,8 @@ int main(int argc, char** argv)
     char* GET_write;         /* The query string used to send the message */
     char* GET_read;          /* The query string used to read the update*/
 
+    /* Used to get  chat_id */
+    char* chat_obj;
     /* ID of the chat the message is sent to */
     char* chat_id;
     /* Offset of the last update (by default, "0" to get the oldest that is
@@ -102,6 +104,8 @@ int main(int argc, char** argv)
         in_message.text = (char*) malloc(1 * sizeof(char));
         in_message.text[0] = '\0';
 
+        /* If no  message_id  is received, or if the program starts, set to
+         * "0", which gets all the updates */
         if (message_id == NULL)
         {
             message_id = (char*) malloc(sizeof(char) * 2);
@@ -115,20 +119,17 @@ int main(int argc, char** argv)
         curl_easy_setopt(read_handle, CURLOPT_WRITEDATA, &in_message);
         result = curl_easy_perform(read_handle);
 
-#if 1              /* For debug purposes */
-        printf("%s\n", in_message.text);
-#endif
 
         free(message_id);
         /* Read some fields from the update string */
         json_field(in_message.text, "text", STRING, &message_text);
         json_field(in_message.text, "update_id", INT, &message_id);
-        json_field(in_message.text, "chat", INT, &chat_id);
+        json_field(in_message.text, "chat", OBJECT, &chat_obj);
+        json_field(chat_obj, "id", INT, &chat_id);
 
+        /* If  message_id  is available,  add 1 to it */
         if (message_id != NULL)
-            /* Add one to the update ID */
-            for (i = strlen(message_id) - 1;
-                 i >= 0 && ++message_id[i] == '9' + 1; i++)
+            for (i = strlen(message_id) - 1; ++(message_id[i]) > '9'; i--)
                 message_id[i] = '0';
 
         /* If "Rosa" or "Rous" is found, send the answer */
@@ -149,8 +150,12 @@ int main(int argc, char** argv)
                 fprintf(stderr, "Error: Ocurrió un error con cURL\n");
         }
 
+        /* Free everything (except  message_id,  which will be used in the
+         * next update, and  GET_read  and  GET_write,  which is better to
+         * keep instead of freeing and allocating it) */
         in_message.size = 0;
         free(in_message.text);
+        free(chat_obj);
         free(chat_id);
         free(message_text);
     }
