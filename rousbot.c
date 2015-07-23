@@ -65,7 +65,7 @@ size_t read_message(void* raw_message, size_t size, size_t nmemb, void* dest)
 
 /* This acts as a non-working  read_message,  used to send the message through
  * the HTTP GET method in a query string */
-size_t dummy_function(void* no_use, size_t size1, size_t nmemb, void* null)
+size_t dummy_function(void* no_use, size_t size, size_t nmemb, void* null)
 {
     return size * nmemb;
 }
@@ -82,17 +82,11 @@ int main(int argc, char** argv)
     char* GET_write;         /* The query string used to send the message */
     char* GET_read;          /* The query string used to read the update*/
 
-#if 1              /* In case there's not a working  message.c */
-    /* Offset of the last update (with "0" we get the oldest that is still
-     * stored) */
-    char message_id[] = "0";
-#else              /* Needs a working  message.c */
     /* ID of the chat the message is sent to */
     char* chat_id;
     /* Offset of the last update (by default, "0" to get the oldest that is
      * still stored) */
-    char* message_id;
-#endif
+    char* message_id = NULL;
     char* message_text;
 
     int i;         /* Used to go through  message_id  and add one to it */
@@ -121,11 +115,10 @@ int main(int argc, char** argv)
         curl_easy_setopt(read_handle, CURLOPT_WRITEDATA, &in_message);
         result = curl_easy_perform(read_handle);
 
-#if 0              /* For debug purposes */
+#if 1              /* For debug purposes */
         printf("%s\n", in_message.text);
 #endif
 
-#if 0              /* Needs a working  message.c */
         free(message_id);
         /* Read some fields from the update string */
         json_field(in_message.text, "text", STRING, &message_text);
@@ -137,7 +130,6 @@ int main(int argc, char** argv)
             for (i = strlen(message_id) - 1;
                  i >= 0 && ++message_id[i] == '9' + 1; i++)
                 message_id[i] = '0';
-#endif
 
         /* If "Rosa" or "Rous" is found, send the answer */
         if (search_mention(message_text))
@@ -158,11 +150,9 @@ int main(int argc, char** argv)
         }
 
         in_message.size = 0;
-#if 0
         free(in_message.text);
         free(chat_id);
         free(message_text);
-#endif
     }
 
     return 0;
