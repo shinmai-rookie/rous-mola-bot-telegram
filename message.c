@@ -38,11 +38,15 @@ char search_mention(char* full_message) {
 
     int i = 0;
     char aux;
+    size_t searchable_length = strlen(full_message) - 4;
 
-    while (*(full_message + i) != '\0') {
+    if (full_message == NULL)
+        return 0;
+
+    while (i < searchable_length && *(full_message + i) != '\0') {
         aux = *(full_message + i + 4);
         *(full_message + i + 4) = '\0';
-        if (!strcmp(full_message + i, "Rosa") || !strcmp(full_message + i, "Rous") || !strcmp(full_message + i, "ROSA") || !strcmp(full_message + i, "ROUS")) {
+        if (strcmp(full_message + i, "Rosa") * strcmp(full_message + i, "Rous") * strcmp(full_message + i, "ROSA") * strcmp(full_message + i, "ROUS") == 0) {
             *(full_message + i + 4) = aux;
             return 1;
         }
@@ -79,17 +83,17 @@ void json_field(char* full_message, const char* field, char type, char** value) 
             i++;
         else {
             if (*(full_message + i) == '"') {
-                if (*(full_message + i + len + 1) == '"') {
+                if (*(full_message + i + len) == '"') {
                     for (j = 0; j < len; j++)
-                        if (*(full_message + i + 1 + j) != *(field + j)) 
-                            goto CONTINUE;                       
-                    if (*(full_message + i + len + 2) == ':') {
+                        if (*(full_message + i + j) != *(field + j))
+                            goto CONTINUE;                      
+                    if (*(full_message + i + len + 1) == ':') {
                         if (type == INT) {
                             j = 0;
-                            if (*(full_message + i + len + 3) == '-')
+                            if (*(full_message + i + len + 2) == '-')
                                 j++;
                             while (1) {
-                                if ((*(full_message + i + len + 3 + j) >= '0')&&(*(full_message + i + len + 3 + j) <= '9'))
+                                if ((*(full_message + i + len + 2 + j) >= '0')&&(*(full_message + i + len + 2 + j) <= '9'))
                                     j++;
                                 else
                                     break;
@@ -100,26 +104,26 @@ void json_field(char* full_message, const char* field, char type, char** value) 
                         }
                         if (type == STRING) {
                             j = 0;
-                            if (*(full_message + i + len + 3) != '"') {
+                            if (*(full_message + i + len + 2) != '"') {
                                 *value = NULL;
                             }
                             while (1) {
-                                if (*(full_message + i + len + 4 + j) == '\\') {
+                                if (*(full_message + i + len + 3 + j) == '\\') {
                                     j += 2;
-                                    k++; 
-                                    continue; 
+                                    k++;
+                                    continue;
                                 }
-                                if ((*(full_message + i + len + 4 + j) != '"')){
+                                if ((*(full_message + i + len + 3 + j) != '"')){
                                     j++;
-                                    k++; 
+                                    k++;
                                 }
                                 else
                                     break;
                             }
-                            *value = (char*) malloc(k);
+                            *value = (char*) malloc(sizeof(char) * k);
                             for (j = 0; j < k; j++) {
-                                if (*(full_message + i + len + 4 + j) == '\\')
-                                    continue; 
+                                if (*(full_message + i + len + 3 + j) == '\\')
+                                    continue;
                                 *(*value + j) = *(full_message + i + len + 3 + k);
                             }
                         }

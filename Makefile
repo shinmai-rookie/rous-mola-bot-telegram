@@ -21,7 +21,7 @@ debug: $(OBJS)
 all: build
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $(@:.o=.c) -o $@
+	$(CC) $(CFLAGS) -g -c $(@:.o=.c) -o $@
 
 test: $(OBJS)
 	$(CC) $(CFLAGSFINAL) $(OBJS) -o $(TEST) $(TEST_SRCS)
