@@ -23,6 +23,11 @@
 #include "message.h"
 #include "bot_key.h"
 
+/* A constant called  BOT_KEY  (with the key of the bot) is needed, and should
+ * be defined in  bot_key.h  (which should be added to  .gitignore  to
+ * guarantee privacy) */
+#define BOT_ADDRESS "https://api.telegram.org/bot"BOT_KEY
+
 /* The space allocated for the whole address of the read and write commands,
  * including the query commands
  * Both were around ~110 bytes when I tested them; if you suspect a possible
